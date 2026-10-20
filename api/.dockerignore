@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+Dockerfile
+.dockerignore
+*.db
+*.db-shm
+*.db-wal

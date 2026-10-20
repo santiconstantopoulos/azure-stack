@@ -1,0 +1,26 @@
+# Secretos y configuración local (NUNCA subir)
+.env
+local.settings.json
+
+# .NET
+bin/
+obj/
+.vs/
+*.user
+
+# Bases de datos locales
+*.db
+*.db-shm
+*.db-wal
+
+# Azurite (emulador de Azure Storage)
+.azurite/
+azurite-data/
+__blobstorage__/
+__queuestorage__/
+__azurite_db_*.json
+
+# Node / Angular
+node_modules/
+dist/
+.angular/

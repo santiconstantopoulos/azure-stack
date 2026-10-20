@@ -1,0 +1,32 @@
+<main class="container">
+  <h1>TaskHub</h1>
+  <p class="subtitle">{{ pending() }} pendiente(s) de {{ tasks().length }}</p>
+
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  <form class="new-task" (ngSubmit)="add()">
+    <input
+      name="title"
+      [(ngModel)]="newTitle"
+      placeholder="Nueva tarea…"
+      maxlength="200"
+      autocomplete="off" />
+    <button type="submit" [disabled]="!newTitle.trim()">Agregar</button>
+  </form>
+
+  <ul class="tasks">
+    @for (task of tasks(); track task.id) {
+      <li [class.done]="task.done">
+        <label>
+          <input type="checkbox" [checked]="task.done" (change)="toggle(task)" />
+          <span>{{ task.title }}</span>
+        </label>
+        <button class="remove" (click)="remove(task)" aria-label="Borrar tarea">✕</button>
+      </li>
+    } @empty {
+      <li class="empty">No hay tareas todavía.</li>
+    }
+  </ul>
+</main>

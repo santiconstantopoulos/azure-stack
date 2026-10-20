@@ -1,0 +1,26 @@
+### Probar la API (Visual Studio o VS Code con la extensión "REST Client")
+@host = http://localhost:5000
+
+### Estado
+GET {{host}}/health
+
+### Listar tareas
+GET {{host}}/api/tasks
+
+### Crear tarea
+POST {{host}}/api/tasks
+Content-Type: application/json
+
+{ "title": "Aprender Docker" }
+
+### Marcar / desmarcar como hecha (cambiá el id)
+PUT {{host}}/api/tasks/1/toggle
+
+### Borrar (cambiá el id)
+DELETE {{host}}/api/tasks/1
+
+### Validación: debe devolver 400
+POST {{host}}/api/tasks
+Content-Type: application/json
+
+{ "title": "   " }

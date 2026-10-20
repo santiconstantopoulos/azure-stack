@@ -1,0 +1,21 @@
+{
+  "profiles": {
+    "TaskHub.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "health",
+      "applicationUrl": "http://localhost:5000",
+      "environmentName": "Development"
+    },
+    "TaskHub.Api.Queue": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "health",
+      "applicationUrl": "http://localhost:5000",
+      "environmentName": "Development",
+      "environmentVariables": {
+        "Queue__ConnectionString": "UseDevelopmentStorage=true"
+      }
+    }
+  }
+}

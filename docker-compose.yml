@@ -1,0 +1,71 @@
+name: taskhub
+
+# Cadena de conexión del emulador Azurite (cuenta de desarrollo pública, sin valor de seguridad).
+# Dentro de la red de compose, Azurite se llama "azurite" (no 127.0.0.1).
+x-azurite-connection: &azurite-connection "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;"
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    ports:
+      - "1433:1433"          # para conectarte con SSMS / Azure Data Studio desde tu PC
+    volumes:
+      - sqldata:/var/opt/mssql   # los datos sobreviven aunque borres el contenedor
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Emulador local de Azure Storage (blobs, colas, tablas). Gratis, sin cuenta de Azure.
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --skipApiVersionCheck
+    ports:
+      - "10000:10000"        # blobs
+      - "10001:10001"        # colas
+      - "10002:10002"        # tablas
+    volumes:
+      - azuritedata:/data
+
+  api:
+    build: ./api
+    environment:
+      Database__Provider: SqlServer   # en Docker usamos SQL Server (local usa SQLite)
+      ConnectionStrings__Default: "Server=db;Database=TaskHub;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+      Queue__ConnectionString: *azurite-connection   # publica eventos en la cola de Azurite
+    ports:
+      - "5000:8080"          # http://localhost:5000/health
+    depends_on:
+      db:
+        condition: service_healthy   # la API espera a que SQL Server esté listo
+      azurite:
+        condition: service_started
+
+  # Azure Functions corriendo en un contenedor: procesa la cola y limpia tareas hechas.
+  functions:
+    build: ./functions
+    environment:
+      AzureWebJobsStorage: *azurite-connection   # el host de Functions guarda su estado acá
+      QueueConnection: *azurite-connection       # conexión del Queue trigger
+      FUNCTIONS_WORKER_RUNTIME: dotnet-isolated
+      TaskHubApiUrl: http://api:8080             # dentro de compose, la API se llama "api"
+      CleanupSchedule: "0 */2 * * * *"           # cada 2 minutos
+    depends_on:
+      - azurite
+      - api
+
+  web:
+    build: ./web
+    ports:
+      - "4200:80"            # http://localhost:4200
+    depends_on:
+      - api
+
+volumes:
+  sqldata:
+  azuritedata:
